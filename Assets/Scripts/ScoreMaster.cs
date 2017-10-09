@@ -1,14 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class ScoreMaster
+public class ScoreMaster
 {
-
-    private struct Strike {
-        public int bonusLeft;
-        public int totalScore;
-    }
-    
     // Returns a list of cumulative scores like a normal score card
     public static List<int> ScoreCumulative (List<int> rolls)
 	{
@@ -28,58 +22,26 @@ public static class ScoreMaster
 	{
 		List<int> frameList = new List<int>();
 
-        List<Strike> strikes = new List<Strike>();
-        int savedRoll = -1;
-        bool sparePending = false;
+        bool firstBowl = true;
 
+        for (int i = 0; i < rolls.Count; i++) {
 
-        for (int roll = 0; roll < rolls.Count; roll++) {
-
-            if (sparePending) {
-                frameList.Add(savedRoll + rolls[roll]);
-                savedRoll = rolls[roll];
-                sparePending = false;
-                continue;
+            bool isStrike = (firstBowl && rolls[i] >= 10);
+            if (isStrike) {
+                if (rolls.Count > i + 2) {
+                    frameList.Add(rolls[i] + rolls[i + 1] + rolls[i + 2]);
+                    firstBowl = true;
+                } else return frameList;
             }
 
-            if (strikes.Count > 0) {
-
-                strikes.ForEach(delegate (Strike strike) {
-                    if (strike.bonusLeft > 1) {
-                        strike.totalScore += rolls[roll];
-                        strike.bonusLeft--;
-                    } else {
-                        frameList.Add(strike.totalScore);
-                        strikes.Remove(strike);
-                    }
-                });
-                continue;
-            }
-
-            if (roll % 2 == 0) {
-
-                if (rolls[roll] == 10) { // strike
-                    strikes.Add(new Strike { bonusLeft = 2, totalScore = 10 });
-                } else {
-                    savedRoll = rolls[roll];
-                }
+            if (firstBowl) {
+                firstBowl = false;
             } else {
-                if (rolls[roll - 1] + rolls[roll] >= 10) { // spare
-                    savedRoll = 10;
-                    sparePending = true;
-                } else {
-                    frameList.Add(savedRoll + rolls[roll]);
-                    savedRoll = -1;
-                }
+                frameList.Add(rolls[i-1] + rolls[i]);
+                firstBowl = true;
             }
         }
-
-        // displaying frame list for debugging purposes
-        frameList.ForEach(delegate (int roll) {
-            Debug.Log(roll);
-        });
-        Debug.Log("---------------------------------------------");
-
+        
 		return frameList;
 	}
 }
